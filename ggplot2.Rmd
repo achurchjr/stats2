@@ -1,0 +1,22 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+data %>% 
+  #filter(continent=="Asia") %>% 
+  mutate(ln_pop = log(pop),
+         ln_gdp = log(gdpPercap)) %>% 
+
+  ggplot(aes(x = ln_gdp, y = lifeExp, size=ln_pop,color=continent)) +
+  geom_point(alpha=.5) +
+  labs(y="Life Expectancy",x="Log GDP", size="Log Population") +
+  #se=F sets standard error to false
+  geom_smooth(se=F) +
+  theme(legend.position = "bottom") +
+  ggthemes::scale_color_gdocs() +
+  #facet wrap and ~ creates separate graphs for each ~continent in this case
+  facet_wrap(~continent, nrow = 1)
+```
+
