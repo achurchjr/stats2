@@ -1,0 +1,100 @@
+---
+title: "PPOL561 - HM 1 - Data Wrangling and Visualization"
+author: "Allen Church"
+output: pdf_document
+---
+```{r,include=F}
+knitr::opts_chunk$set(warning = F,error=F,message=F)
+require(tidyverse)
+```
+## Question 2
+1. Only countries are in the data; no regions or non-state entities
+2. Drop all variables but the `iso3c`,`date`,`value`, `indicatorID`, and `country`.
+3. Spread `indicatorID` into two new variables ("SP.POP.TOTL","NY.GDP.MKTP.CD") where the values correspond with the entries in the `value` variable column. 
+4. Rename `iso3c` to `ccode`, `date` to `year`, `SP.POP.TOTL` to `pop`, and `NY.GDP.MKTP.CD` to `gdp`.
+5. Rearrange the columns in the following order: `country`, `ccode`, `year`, `gdp`, `pop`
+6. Count to see if you have any missing for `gdp` entries; if there are any missing entries, create a new variable called `missing_gdp` that takes on the value of `1` if missing, `0` otherwise. How many country-year values are missing? Which country has the most missing values?
+  - tip: look at the `ifelse()` and `is.na()` functions for ideas regarding how to do this.
+7. Transform `pop` and `gdp` using the natural `log()`. Name the new variables `ln_gdp` and `ln_pop`.
+8. Export the data as a `.dta` and `.csv` into the `Output/` folder. Name the data `wb-pop-gdp-2000-2005`.
+
+Please use the tidyverse function to perform _all_ these tasks. Be sure to pipe (` %>% `) when necessary.
+
+### Part 1: Import population and GDP data as dataframe, specifying regions and dates:
+```{r}
+library(wbstats)
+library(ggthemes)
+
+#Call regions, specify PPG indicator, and start/end dates
+# indicator = External debt stocks, public and publicly guaranteed
+ext_debt <- wb(country = c("EAP", "MNA", "ECA", "SAS", "LAC", "SSA"), indicator = "DT.DOD.DPPG.CD",
+              startdate = 2008, enddate = 2018)
+
+head(ext_debt)
+```
+
+### Parts 2-5: Initial data wrangling - Adjusting columns
+```{r}
+#Select columns from dataframe above, spread data from horizontal to vertical format, rename columns, mutate to convert units to billions, and select final columns
+ext_debt <- ext_debt %>%  
+  select("iso3c","date","value", "indicatorID") %>% 
+  spread(key = indicatorID, value = value) %>% 
+  rename(region = iso3c,
+         year = date,
+         ppg = DT.DOD.DPPG.CD) %>%
+  mutate(PPG_in_billions = ppg/1000000000) %>%
+  select("region", "year", "PPG_in_billions")
+
+head(ext_debt)
+```
+
+```{r}
+ggplot(ext_debt, aes(x=year, y=PPG_in_billions, color = region, group = region)) +
+  geom_point() + geom_line() +
+  labs(title="External debt stocks: Public and Publicly Guaranteed (PPG)",
+  subtitle = "Long-term external obligations of public debtors",
+  caption = "Source: International Debt Statistics",
+  x="Year", y="USD Billions") +
+  theme_minimal()
+```
+
+```{r}
+#external debt stocks % of GNI DT.DOD.DECT.GN.ZS
+```
+
+
+### Part 7: Export figure
+```{r}
+ggsave(plot = myplot, filename = "plot1.pdf", width = 7, height = 5)
+```
+
+### (2) Generate a scatter plot where of log GDP (y-axis) on log population (x-axis) where
+  1. Only observations for the year 2000 are included
+  2. The point size increases as log population increases
+  3. The point color is "forestgreen" with alpha (transparency) .5
+  4. The legend is dropped
+  5. The labels read:
+      + y: "Log GDP"
+      + x: "Log Population"
+      + title: "Relationship between population and economic development"
+      + subtitle: "World bank data for the year 2000 reported"
+  6. Change the plot theme to `theme_light()`
+  7. Export the figure as a `.png`, be sure to adjust height and width and set dpi to 600. Use "plot2.png" as the file name.
+
+
+```{r}
+data %>% 
+  #filter(continent=="Asia") %>% 
+  mutate(ln_pop = log(pop),
+         ln_gdp = log(gdpPercap)) %>% 
+  ggplot(aes(x = ln_gdp, y = lifeExp, size=ln_pop,color=continent)) +
+  geom_point(alpha=.5) +
+  labs(y="Life Expectancy",x="Log GDP", size="Log Population") +
+  #se=F sets standard error to false
+  geom_smooth(se=F) +
+  theme(legend.position = "bottom") +
+  ggthemes::scale_color_gdocs() +
+  #facet wrap and ~ creates separate graphs for each ~continent in this case
+  facet_wrap(~continent, nrow = 1)
+```
+
