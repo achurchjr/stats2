@@ -49,6 +49,7 @@ head(ext_debt)
 ```
 
 ```{r}
+#remove grid and rename regions
 ggplot(ext_debt, aes(x=year, y=PPG_in_billions, color = region, group = region)) +
   geom_point() + geom_line() +
   labs(title="External debt stocks: Public and Publicly Guaranteed (PPG)",
@@ -58,25 +59,22 @@ ggplot(ext_debt, aes(x=year, y=PPG_in_billions, color = region, group = region))
   theme_minimal()
 ```
 
+Call External Debt to GNI: 2008 - 2018 for all regions
 ```{r}
-#external debt stocks % of GNI DT.DOD.DECT.GN.ZS
+#Call API, select external debt stocks as % of GNI, and rename columns
 debt_gni <- wb(country = c("EAP", "MNA", "ECA", "SAS", "LAC", "SSA"), indicator = "DT.DOD.DECT.GN.ZS",
-              startdate = 2008, enddate = 2018)
-
-head(debt_gni)
-```
-```{r}
-debt_gni <- debt_gni %>%  
+              startdate = 2008, enddate = 2018) %>% 
   select("iso3c","date","value", "indicatorID") %>% 
   spread(key = indicatorID, value = value) %>% 
   rename(region = iso3c,
          year = date,
          debt_to_gni = DT.DOD.DECT.GN.ZS) %>%
   select("region", "year", "debt_to_gni")
-
+  
 head(debt_gni)
 ```
 
+Plotting External Debt Stocks to GNI (2008 - 2018)
 ```{r}
 ggplot(debt_gni, aes(x=year, y=debt_to_gni, color = region, group = region)) +
   geom_point() + geom_line() +
@@ -85,6 +83,8 @@ ggplot(debt_gni, aes(x=year, y=debt_to_gni, color = region, group = region)) +
   x="Year", y="Percent of GNI") +
   theme_minimal()
 ```
+
+
 ```{r}
 library(maps)
 
@@ -92,8 +92,36 @@ map_data("world")
 
 #Filter by only capital cities
 world.cities %>% filter(capital==1)
+
+head(world.cities)
 ```
 
+Relationship between Exports of Goods (BX.GSR.TOTL.CD) and Commitments (DT.COM.DPPG.CD)
+```{r}
+export_com <- wb(country = "LAC", indicator = c("BX.GSR.TOTL.CD", "DT.COM.DPPG.CD"),
+              startdate = 2008, enddate = 2018) %>% 
+  select("iso3c","date","value", "indicatorID", "country") %>% 
+  spread(key = indicatorID, value = value) %>% 
+  rename(region = iso3c,
+         year = date,
+         export = BX.GSR.TOTL.CD,
+         com = DT.COM.DPPG.CD) %>% 
+  mutate(Export_in_billions = export/1000000000) %>% 
+  mutate(Commitments_in_billions = com/1000000000) %>%
+  select("country", "region", "year", "Export_in_billions", "Commitments_in_billions")
+```
+
+Plotting
+```{r}
+ggplot() +
+  geom_line(data = export_com, aes(x = year, y = Export_in_billions, group = region), color="blue") +
+  geom_point() + 
+  geom_line(data = export_com, aes(x = year, y = Commitments_in_billions, group = region), color = "red") +
+  labs(title="Total Commitments to Exports",
+  caption = "Source: International Debt Statistics",
+  x="Year", y="Billions") +
+  theme_minimal()
+```
 
 
 ```{r}

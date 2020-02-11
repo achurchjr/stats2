@@ -1,0 +1,84 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(maps)
+library(tidyverse)
+map('world')
+```
+
+Collecting External Debt to GNI Data - Specifying Countries Only and for 2018
+```{r}
+#Only selecting country and debt_to_gni indicators
+debt_gni <- wb(country = "countries_only", indicator = "DT.DOD.DECT.GN.ZS", startdate = 2018, enddate = 2019) %>% 
+  select("country", "value", "indicatorID", "iso3c") %>% 
+  spread(key = indicatorID, value = value) %>% 
+  rename(debt_to_gni = DT.DOD.DECT.GN.ZS)
+
+head(debt_gni)
+```
+
+
+https://plot.ly/r/choropleth-maps/
+```{r}
+library(plotly)
+
+# light grey boundaries
+l <- list(color = toRGB("grey"), width = 0.5)
+
+# specify map projection/options
+g <- list(
+  showframe = FALSE,
+  showcoastlines = FALSE,
+  projection = list(type = 'Mercator')
+)
+
+p <- plot_geo(debt_gni) %>%
+  add_trace(
+    z = ~debt_to_gni, color = ~debt_to_gni, colors = 'Reds',
+    text = ~country, locations = ~iso3c, marker = list(line = l)
+  ) %>%
+  colorbar(title = 'Debt to GNI', tickprefix = '%') %>%
+  layout(
+    title = '2018 Debt to GNI<br>Source:<a href="https://databank.worldbank.org/reports.aspx?source=international-debt-statistics">International Debt Statistics</a>',
+    geo = g
+  )
+
+p
+```
+
+
+Filtering Data for Capital Cities
+```{r}
+world_cities <- world.cities %>%
+  filter(capital==1) %>% 
+  rename(country = country.etc)
+
+head(world_cities)
+```
+
+Merging debt_gni to world_cities to obtain lat/long
+```{r}
+lac <- left_join(debt_gni, world_cities, by = "country")
+head(lac)
+```
+
+Map
+```{r}
+library(viridis)
+
+lac %>%
+ arrange(debt_to_gni) %>% 
+ mutate( country=factor(country, unique(country))) %>% 
+ ggplot() +
+    geom_polygon(data = lac, aes(x=long, y = lat), fill="grey", alpha=0.3) +
+    geom_point( aes(x=long, y=lat, size=debt_to_gni, color=debt_to_gni), alpha=0.9) +
+    scale_size_continuous(range=c(1,12)) +
+    scale_color_viridis(trans="log") +
+    theme_void() + ylim(0, 100) + coord_map() + theme(legend.position="none")
+ 
+```
+
+
