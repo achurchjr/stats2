@@ -17,7 +17,7 @@ debt_gni <- wb(country = "countries_only", indicator = "DT.DOD.DECT.GN.ZS", star
   spread(key = indicatorID, value = value) %>% 
   rename(debt_to_gni = DT.DOD.DECT.GN.ZS)
 
-head(debt_gni)
+debt_gni
 ```
 
 

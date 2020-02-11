@@ -76,12 +76,16 @@ head(debt_gni)
 
 Plotting External Debt Stocks to GNI (2008 - 2018)
 ```{r}
-ggplot(debt_gni, aes(x=year, y=debt_to_gni, color = region, group = region)) +
+test_graph <- ggplot(debt_gni, aes(x=year, y=debt_to_gni, color = region, group = region)) +
   geom_point() + geom_line() +
   labs(title="Total external debt stocks to Gross National Income (GNI)",
   caption = "Source: International Debt Statistics",
   x="Year", y="Percent of GNI") +
   theme_minimal()
+
+test_plot <- ggplotly(test_graph)
+
+test_plot
 ```
 
 
