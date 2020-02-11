@@ -60,26 +60,40 @@ ggplot(ext_debt, aes(x=year, y=PPG_in_billions, color = region, group = region))
 
 ```{r}
 #external debt stocks % of GNI DT.DOD.DECT.GN.ZS
+debt_gni <- wb(country = c("EAP", "MNA", "ECA", "SAS", "LAC", "SSA"), indicator = "DT.DOD.DECT.GN.ZS",
+              startdate = 2008, enddate = 2018)
+
+head(debt_gni)
 ```
-
-
-### Part 7: Export figure
 ```{r}
-ggsave(plot = myplot, filename = "plot1.pdf", width = 7, height = 5)
+debt_gni <- debt_gni %>%  
+  select("iso3c","date","value", "indicatorID") %>% 
+  spread(key = indicatorID, value = value) %>% 
+  rename(region = iso3c,
+         year = date,
+         debt_to_gni = DT.DOD.DECT.GN.ZS) %>%
+  select("region", "year", "debt_to_gni")
+
+head(debt_gni)
 ```
 
-### (2) Generate a scatter plot where of log GDP (y-axis) on log population (x-axis) where
-  1. Only observations for the year 2000 are included
-  2. The point size increases as log population increases
-  3. The point color is "forestgreen" with alpha (transparency) .5
-  4. The legend is dropped
-  5. The labels read:
-      + y: "Log GDP"
-      + x: "Log Population"
-      + title: "Relationship between population and economic development"
-      + subtitle: "World bank data for the year 2000 reported"
-  6. Change the plot theme to `theme_light()`
-  7. Export the figure as a `.png`, be sure to adjust height and width and set dpi to 600. Use "plot2.png" as the file name.
+```{r}
+ggplot(debt_gni, aes(x=year, y=debt_to_gni, color = region, group = region)) +
+  geom_point() + geom_line() +
+  labs(title="Total external debt stocks to Gross National Income (GNI)",
+  caption = "Source: International Debt Statistics",
+  x="Year", y="Percent of GNI") +
+  theme_minimal()
+```
+```{r}
+library(maps)
+
+map_data("world")
+
+#Filter by only capital cities
+world.cities %>% filter(capital==1)
+```
+
 
 
 ```{r}
