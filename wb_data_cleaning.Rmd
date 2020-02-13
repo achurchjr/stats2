@@ -24,6 +24,8 @@ Please use the tidyverse function to perform _all_ these tasks. Be sure to pipe 
 ```{r}
 library(wbstats)
 library(ggthemes)
+library(plotly)
+library(tidyverse)
 
 #Call regions, specify PPG indicator, and start/end dates
 # indicator = External debt stocks, public and publicly guaranteed
@@ -87,60 +89,3 @@ test_plot <- ggplotly(test_graph)
 
 test_plot
 ```
-
-
-```{r}
-library(maps)
-
-map_data("world")
-
-#Filter by only capital cities
-world.cities %>% filter(capital==1)
-
-head(world.cities)
-```
-
-Relationship between Exports of Goods (BX.GSR.TOTL.CD) and Commitments (DT.COM.DPPG.CD)
-```{r}
-export_com <- wb(country = "LAC", indicator = c("BX.GSR.TOTL.CD", "DT.COM.DPPG.CD"),
-              startdate = 2008, enddate = 2018) %>% 
-  select("iso3c","date","value", "indicatorID", "country") %>% 
-  spread(key = indicatorID, value = value) %>% 
-  rename(region = iso3c,
-         year = date,
-         export = BX.GSR.TOTL.CD,
-         com = DT.COM.DPPG.CD) %>% 
-  mutate(Export_in_billions = export/1000000000) %>% 
-  mutate(Commitments_in_billions = com/1000000000) %>%
-  select("country", "region", "year", "Export_in_billions", "Commitments_in_billions")
-```
-
-Plotting
-```{r}
-ggplot() +
-  geom_line(data = export_com, aes(x = year, y = Export_in_billions, group = region), color="blue") +
-  geom_point() + 
-  geom_line(data = export_com, aes(x = year, y = Commitments_in_billions, group = region), color = "red") +
-  labs(title="Total Commitments to Exports",
-  caption = "Source: International Debt Statistics",
-  x="Year", y="Billions") +
-  theme_minimal()
-```
-
-
-```{r}
-data %>% 
-  #filter(continent=="Asia") %>% 
-  mutate(ln_pop = log(pop),
-         ln_gdp = log(gdpPercap)) %>% 
-  ggplot(aes(x = ln_gdp, y = lifeExp, size=ln_pop,color=continent)) +
-  geom_point(alpha=.5) +
-  labs(y="Life Expectancy",x="Log GDP", size="Log Population") +
-  #se=F sets standard error to false
-  geom_smooth(se=F) +
-  theme(legend.position = "bottom") +
-  ggthemes::scale_color_gdocs() +
-  #facet wrap and ~ creates separate graphs for each ~continent in this case
-  facet_wrap(~continent, nrow = 1)
-```
-
